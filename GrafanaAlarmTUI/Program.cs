@@ -137,7 +137,7 @@ namespace GrafanaAlarmTUI
                 string sWrite = $"[{alert.connection.Name}] {Description}";
                 
                 //Create a string for the time since the alert started.
-                string sTimeString = (DateTime.Now - alert.startsAt).ToString("HH:mm:ss");
+                string sTimeString = (DateTime.Now - alert.startsAt).ToString(@"dd\.hh\:mm\:ss");
                 //Truncate the description if it's too long.
                 if (Console.WindowWidth - sWrite.Length < sTimeString.Length)
                 {
