@@ -1,0 +1,10 @@
+{
+  "title": "Grafana Alarms",
+  "connections": [
+    {
+      "name": "Grafana Instance Name",
+      "grafanaUrl": "https://grafana.instance.url/",
+      "grafanaApiKey": "GRAFANA_API_KEY"
+    }
+  ]
+}
