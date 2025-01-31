@@ -6,7 +6,7 @@ namespace GrafanaAlarmTUI
     internal class Program
     {
         public static string Title = "Grafana Alarm TUI";
-        public static string Version = "1.0.0";
+        public static string Version = "1.1.0";
         static void Main(string[] args)
         {
             string sConfigurationFile = "configuration.json";
@@ -46,6 +46,13 @@ namespace GrafanaAlarmTUI
                 Title = configurationFile.Title;
             }
 
+            // Track outage times for connections.
+            Dictionary<string, DateTime> connectionOutages = new Dictionary<string, DateTime>();
+            foreach(GrafanaConnection connection in configurationFile.Connections)
+            {
+                connectionOutages.Add(connection.Name, DateTime.MaxValue);
+            }
+
             //Set our initial color scheme to White on Black in case the terminal is
             //in a different color configuration.
             Console.BackgroundColor = ConsoleColor.Black;
@@ -67,8 +74,33 @@ namespace GrafanaAlarmTUI
                 List<GrafanaAlert> lstAlerts = new List<GrafanaAlert>();
                 foreach (GrafanaConnection connection in configurationFile.Connections)
                 {
-                    GrafanaAlert[] alerts = GrafanaApi.GetAlerts(connection);
-                    lstAlerts.AddRange(alerts);
+                    try
+                    {
+                        GrafanaAlert[] alerts = GrafanaApi.GetAlerts(connection);
+                        lstAlerts.AddRange(alerts);
+                        //Clear the outage time for this connection.
+                        connectionOutages[connection.Name] = DateTime.MaxValue;
+                    }
+                    catch (Exception ex)
+                    {
+                        //If this connection is in an outage state, keep track
+                        //of when it started.
+                        if (connectionOutages[connection.Name] == DateTime.MaxValue)
+                        {
+                            connectionOutages[connection.Name] = DateTime.Now;
+                        }
+
+                        //If there is an error, we need to create a synthentic
+                        //alert to show the connection status.
+                        GrafanaAlert connectionAlert = new GrafanaAlert()
+                        {
+                            connection = connection,
+                            annotations = new Annotations() { description = ex.Message },
+                            startsAt = connectionOutages[connection.Name]
+                        };
+
+
+                    }
                 }
 
                 //Star drawing the screen.
